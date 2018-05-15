@@ -17,6 +17,8 @@ Command line arguments:
 	
 	loop-delay	delay loop query into the Ether network in miliseconds, default 5000 (avoid going too low or it will render this app unresponsive)
 
+Releases can be found [here](https://github.com/lwYeo/ETH-GasOMeter/releases).
+
 --------------------------------------------------------------------
 
 If you find this tool useful, and would like to support the developer, then consider a donation.
