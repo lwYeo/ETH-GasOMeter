@@ -2,7 +2,7 @@
 
 This application grabs Gas prices of ERC-20 contract token mining activity from the Ethereum network, and also from ethgasstation.info
 
-Built for with Visual Studio 2015 (requires .NET Core 2.0, compatible with Windows / Linux / macOS)
+Built with Visual Studio 2017 (requires .NET Core 2.0, compatible with Windows / Linux / macOS)
 
 .Net Core runtime can be downloaded from the following links:
 
