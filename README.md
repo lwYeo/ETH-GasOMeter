@@ -6,11 +6,11 @@ Built for with Visual Studio 2015 (requires .NET Core 2.0, compatible with Windo
 
 .Net Core runtime can be downloaded from the following links:
 
-	- Windows [https://www.microsoft.com/net/download/windows/run]
+- Windows [https://www.microsoft.com/net/download/windows/run]
 
-	- Linux [https://www.microsoft.com/net/download/linux/run]
+- Linux [https://www.microsoft.com/net/download/linux/run]
 
-	- macOS [https://www.microsoft.com/net/download/macos/run]
+- macOS [https://www.microsoft.com/net/download/macos/run]
 
 --------------------------------------------------------------------
 
