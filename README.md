@@ -31,7 +31,11 @@ Command line arguments:
 
 	bind-api	Bind Json API via IP:port, default 127.0.0.1:1888
 	
-	loop-delay	Delay loop query into the Ethereum network in milliseconds, default 5000 (avoid going too low or it will render this app unresponsive)
+	loop-delay	Delay loop query into the Ethereum network in milliseconds, default 5000 (avoid going too low or it will render this application unresponsive)
+
+	recent-blocks	API display a history of recent blocks, default 120 (approx. 30 minutes)
+	
+	api-summary	API display summarised fields, default true (false to display original fields)
 
 Releases can be found [here](https://github.com/lwYeo/ETH-GasOMeter/releases).
 

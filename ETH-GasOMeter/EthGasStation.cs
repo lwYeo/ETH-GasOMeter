@@ -16,6 +16,14 @@ namespace ETH_GasOMeter
 
         public EthGasStation() { }
 
+        public EthGasStation(decimal fixedGasPrice)
+        {
+            SafeLowGwei = fixedGasPrice * 10;
+            AverageGwei = fixedGasPrice * 10;
+            FastGwei = fixedGasPrice * 10;
+            FastestGwei = fixedGasPrice * 10;
+        }
+
         [JsonProperty("blockNum")]
         public BigInteger BlockNumber { get; private set; }
 

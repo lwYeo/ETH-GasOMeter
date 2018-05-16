@@ -1,6 +1,8 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Serialization;
 using System;
+using System.Collections.Generic;
 using System.Net.Http;
 
 namespace ETH_GasOMeter
@@ -11,11 +13,16 @@ namespace ETH_GasOMeter
         private static object _Object2 = new object();
         private static object _Object3 = new object();
 
-        public static string SerializeFromObject(object obj)
+        public static string SerializeFromObject(object obj, JsonSerializerSettings settings = null)
         {
             lock (_Object1)
             {
-                try { return JsonConvert.SerializeObject(obj, Formatting.Indented); }
+                try
+                {
+                    return (settings == null) ?
+                        JsonConvert.SerializeObject(obj, Formatting.Indented) :
+                        JsonConvert.SerializeObject(obj, Formatting.Indented, settings);
+                }
                 catch { }
                 return string.Empty;
             }
@@ -68,6 +75,16 @@ namespace ETH_GasOMeter
                 }
                 catch { }
                 return jObject;
+            }
+        }
+
+        public class ClassNameContractResolver : DefaultContractResolver
+        {
+            protected override IList<JsonProperty> CreateProperties(Type type, MemberSerialization memberSerialization)
+            {
+                IList<JsonProperty> propList = base.CreateProperties(type, memberSerialization);
+                foreach (JsonProperty prop in propList) { prop.PropertyName = prop.UnderlyingName; }
+                return propList;
             }
         }
     }

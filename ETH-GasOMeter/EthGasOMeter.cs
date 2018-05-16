@@ -17,6 +17,7 @@ namespace ETH_GasOMeter
 {
     class EthGasOMeter : IDisposable
     {
+        public event Transaction.EthGasStationEventHandler OnEthGasStationLog;
         public event Transaction.TransactionEventHandler OnTransactionLog;
 
         public delegate void MessageHandler(object sender, MessageArgs e);
@@ -26,12 +27,15 @@ namespace ETH_GasOMeter
         public event RequestUserInputHandler OnRequestUserInput;
 
         private const string InfuraDevRPC = "https://mainnet.infura.io/ANueYSYQTstCr2mFJjPE";
-
+        
         private int _DelayLoopMS;
         private Task _Task;
         private CancellationTokenSource _CancellationTokenSource;
 
-        public EthGasOMeter(int delayLoopMS) { _DelayLoopMS = delayLoopMS; }
+        public EthGasOMeter(int delayLoopMS)
+        {
+            _DelayLoopMS = delayLoopMS;
+        }
 
         public void Start(bool showCancel = false)
         {
@@ -103,10 +107,15 @@ namespace ETH_GasOMeter
                     var ethGasStation = Task.Factory.StartNew(() =>
                     {
                         var tempGasStation = EthGasStation.GetLatestGasStation();
-                        while (tempGasStation == null || tempGasStation.BlockNumber.Equals(0)) { tempGasStation = EthGasStation.GetLatestGasStation(); }
+
+                        if (tempGasStation == null || tempGasStation.BlockNumber.Equals(0)) // failed query
+                        {
+                            var currentGas = UnitConversion.Convert.FromWei(web3.Eth.GasPrice.SendRequestAsync().Result.Value, UnitConversion.EthUnit.Gwei);
+                            tempGasStation = new EthGasStation(Convert.ToDecimal(currentGas));
+                        }
                         return tempGasStation;
                     }).ContinueWith((gasStationTask) => {
-                        OnTransactionLog?.Invoke(this, new Transaction.TransactionEventArgs(null, null, gasStationTask.Result, null));
+                        if (gasStationTask.Result != null) { OnEthGasStationLog?.Invoke(this, new Transaction.EthGasStationEventArgs(gasStationTask.Result)); }
                         return gasStationTask.Result;
                     });
 
@@ -140,7 +149,7 @@ namespace ETH_GasOMeter
                                            ToList();
                     }).ContinueWith((txEventList) =>
                     {
-                        OnTransactionLog?.Invoke(this, new Transaction.TransactionEventArgs(txEventList.Result, lastBlock.Result, null, ConvertUNIXTimestampToLocalDateTime));
+                        OnTransactionLog?.Invoke(this, new Transaction.TransactionEventArgs(txEventList.Result, lastBlock.Result, ConvertUNIXTimestampToLocalDateTime));
                         return txEventList.Result;
                     });
 

@@ -9,6 +9,7 @@ namespace ETH_GasOMeter
 {
     class Transaction
     {
+        public delegate void EthGasStationEventHandler(object sender, EthGasStationEventArgs e);
         public delegate void TransactionEventHandler(object sender, TransactionEventArgs e);
 
         public class TransactionEvent
@@ -43,17 +44,24 @@ namespace ETH_GasOMeter
             public TransactionReceipt Reciept { get; }
         }
 
+        public class EthGasStationEventArgs : EventArgs
+        {
+            public EthGasStationEventArgs(EthGasStation ethGasStation)
+            {
+                EthGasStation = ethGasStation;
+            }
+
+            public EthGasStation EthGasStation { get; }
+        }
+
         public class TransactionEventArgs : EventArgs
         {
-            public TransactionEventArgs(List<TransactionEvent> data, BlockWithTransactions block, EthGasStation ethGasStation, Func<string, DateTime> unixTimestampConverter)
+            public TransactionEventArgs(List<TransactionEvent> data, BlockWithTransactions block, Func<string, DateTime> unixTimestampConverter)
             {
                 UnixTimestampConverter = unixTimestampConverter;
-                EthGasStation = ethGasStation;
                 Block = block;
                 Events = data?.ToArray();
             }
-
-            public EthGasStation EthGasStation { get; set; }
 
             public BigInteger BlockNumber
             {
