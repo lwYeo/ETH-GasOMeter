@@ -50,10 +50,10 @@ namespace ETH_GasOMeter
                 UnixTimestampConverter = unixTimestampConverter;
                 EthGasStation = ethGasStation;
                 Block = block;
-                Events = data.ToArray();
+                Events = data?.ToArray();
             }
 
-            public EthGasStation EthGasStation { get; }
+            public EthGasStation EthGasStation { get; set; }
 
             public BigInteger BlockNumber
             {

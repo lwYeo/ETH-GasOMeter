@@ -55,7 +55,7 @@ namespace ETH_GasOMeter
             }
         }
 
-        public void Process(HttpListener listener)
+        private void Process(HttpListener listener)
         {
             listener.Start();
             OnMessage?.Invoke(this, new MessageArgs(string.Format("API service started at '{0}'...", listener.Prefixes.ElementAt(0))));
@@ -63,7 +63,7 @@ namespace ETH_GasOMeter
             {
                 Task.Delay(500);
                 var responseArgs = new APIResponseArgs();
-                OnAPIResponse.Invoke(this, responseArgs);
+                OnAPIResponse?.Invoke(this, responseArgs);
                 byte[] buffer = Encoding.UTF8.GetBytes(responseArgs.Response);
 
                 HttpListenerResponse response = listener.GetContext().Response;
@@ -73,13 +73,6 @@ namespace ETH_GasOMeter
                 output.Write(buffer, 0, buffer.Length);
                 output.Close();
             }
-        }
-
-        public class MessageArgs : EventArgs
-        {
-            public MessageArgs(string message) { Message = message; }
-
-            public string Message { get; }
         }
 
         public class APIResponseArgs : EventArgs

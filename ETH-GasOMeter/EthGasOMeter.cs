@@ -18,7 +18,13 @@ namespace ETH_GasOMeter
     class EthGasOMeter : IDisposable
     {
         public event Transaction.TransactionEventHandler OnTransactionLog;
-        
+
+        public delegate void MessageHandler(object sender, MessageArgs e);
+        public event MessageHandler OnMessage;
+
+        public delegate void RequestUserInputHandler(object sender, RequestUserInputArgs e);
+        public event RequestUserInputHandler OnRequestUserInput;
+
         private const string InfuraDevRPC = "https://mainnet.infura.io/ANueYSYQTstCr2mFJjPE";
 
         private int _DelayLoopMS;
@@ -29,7 +35,6 @@ namespace ETH_GasOMeter
 
         public void Start(bool showCancel = false)
         {
-            var selectedAddress = string.Empty;
             var query = new StringBuilder();
             query.AppendLine("Select Token Contract:");
             query.AppendLine("1: 0xBitcoin");
@@ -38,12 +43,14 @@ namespace ETH_GasOMeter
             query.AppendLine("or enter Contract Address (including '0x' prefix)");
             if (showCancel) { query.AppendLine("Press Ctrl-C again to quit."); }
 
+            var selectedAddress = string.Empty;
+            var request = new RequestUserInputArgs(query.ToString());
+
             while (string.IsNullOrWhiteSpace(selectedAddress))
             {
-                Console.Write(query.ToString());
-                var userInput = Console.ReadLine();
+                OnRequestUserInput(this, request);
 
-                switch (userInput)
+                switch (request.UserInput)
                 {
                     case "1":
                     case "0xBitcoin":
@@ -61,14 +68,14 @@ namespace ETH_GasOMeter
                         break;
 
                     default:
-                        if (userInput == null) { return; }
+                        if (request.UserInput == null) { break; }
 
                         var addressUtil = new AddressUtil();
-                        if (userInput.StartsWith("0x") && addressUtil.IsValidAddressLength(userInput) && addressUtil.IsChecksumAddress(userInput))
+                        if (request.UserInput.StartsWith("0x") && addressUtil.IsValidAddressLength(request.UserInput) && addressUtil.IsChecksumAddress(request.UserInput))
                         {
-                            selectedAddress = userInput;
+                            selectedAddress = request.UserInput;
                         }
-                        else { Console.WriteLine("Invalid address."); }
+                        else { OnMessage?.Invoke(this, new MessageArgs("Invalid address.")); }
                         break;
                 }
             }
@@ -98,6 +105,9 @@ namespace ETH_GasOMeter
                         var tempGasStation = EthGasStation.GetLatestGasStation();
                         while (tempGasStation == null || tempGasStation.BlockNumber.Equals(0)) { tempGasStation = EthGasStation.GetLatestGasStation(); }
                         return tempGasStation;
+                    }).ContinueWith((gasStationTask) => {
+                        OnTransactionLog?.Invoke(this, new Transaction.TransactionEventArgs(null, null, gasStationTask.Result, null));
+                        return gasStationTask.Result;
                     });
 
                     var filterInput = new NewFilterInput()
@@ -130,13 +140,13 @@ namespace ETH_GasOMeter
                                            ToList();
                     }).ContinueWith((txEventList) =>
                     {
-                        OnTransactionLog?.Invoke(this, new Transaction.TransactionEventArgs(txEventList.Result, lastBlock.Result, ethGasStation.Result, ConvertUNIXTimestampToLocalDateTime));
+                        OnTransactionLog?.Invoke(this, new Transaction.TransactionEventArgs(txEventList.Result, lastBlock.Result, null, ConvertUNIXTimestampToLocalDateTime));
                         return txEventList.Result;
                     });
 
                     lastBlockNo = tempLastBlockNo;
                 }
-                catch (Exception ex) { Console.WriteLine(ex.ToString()); }
+                catch (Exception ex) { OnMessage?.Invoke(this, new MessageArgs(ex.ToString())); ; }
 
                 GC.Collect(GC.MaxGeneration, GCCollectionMode.Optimized, false);
                 Task.Delay(_DelayLoopMS);
@@ -176,7 +186,7 @@ namespace ETH_GasOMeter
                         if (_CancellationTokenSource != null) { _CancellationTokenSource.Dispose(); }
                         if (_Task != null) { _Task.Dispose(); }
 
-                        Console.WriteLine("Process cancelled.");
+                        OnMessage?.Invoke(this, new MessageArgs("Process cancelled."));
                     }
                     catch (Exception ex)
                     {
@@ -212,5 +222,17 @@ namespace ETH_GasOMeter
         }
 
         #endregion
+
+        public class RequestUserInputArgs : EventArgs
+        {
+            public RequestUserInputArgs(string message)
+            {
+                Message = message;
+            }
+
+            public string Message { get; }
+
+            public string UserInput { get; set; }
+        }
     }
 }
