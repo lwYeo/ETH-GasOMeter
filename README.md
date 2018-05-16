@@ -15,7 +15,7 @@ Command line arguments:
 
 	bind-api	Enable Json API via IP:port (e.g.: 127.0.0.1:4068), default disabled
 	
-	loop-delay	delay loop query into the Ether network in miliseconds, default 5000 (avoid going too low or it will render this app unresponsive)
+	loop-delay	Delay loop query into the Ether network in miliseconds, default 5000 (avoid going too low or it will render this app unresponsive)
 
 Releases can be found [here](https://github.com/lwYeo/ETH-GasOMeter/releases).
 
