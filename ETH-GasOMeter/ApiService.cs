@@ -144,7 +144,7 @@ namespace ETH_GasOMeter
                 get
                 {
                     var highestGwei = Blocks.Max(b => (b.Transactions.Any()) ? b.Transactions.Max(tx => tx.GasPriceGwei) : 0);
-                    return new decimal[] { Convert.ToDecimal(highestGwei.Sign), EthGasStation.SafeLowGwei }.Max();
+                    return new decimal[] { highestGwei, EthGasStation.SafeLowGwei }.Max();
                 }
             }
 
@@ -153,7 +153,7 @@ namespace ETH_GasOMeter
                 get
                 {
                     var highestGwei = Blocks.Max(b => (b.Transactions.Any()) ? b.Transactions.Max(tx => tx.GasPriceGwei) : 0);
-                    return new decimal[] { Convert.ToDecimal(highestGwei.Sign), EthGasStation.AverageGwei }.Max();
+                    return new decimal[] { highestGwei, EthGasStation.AverageGwei }.Max();
                 }
             }
 
@@ -162,7 +162,7 @@ namespace ETH_GasOMeter
                 get
                 {
                     var highestGwei = Blocks.Max(b => (b.Transactions.Any()) ? b.Transactions.Max(tx => tx.GasPriceGwei) : 0);
-                    return new decimal[] { Convert.ToDecimal(highestGwei.Sign), EthGasStation.FastGwei }.Max();
+                    return new decimal[] { highestGwei, EthGasStation.FastGwei }.Max();
                 }
             }
 
@@ -171,7 +171,7 @@ namespace ETH_GasOMeter
                 get
                 {
                     var highestGwei = Blocks.Max(b => (b.Transactions.Any()) ? b.Transactions.Max(tx => tx.GasPriceGwei) : 0);
-                    return new decimal[] { Convert.ToDecimal(highestGwei.Sign), EthGasStation.FastestGwei }.Max();
+                    return new decimal[] { highestGwei, EthGasStation.FastestGwei }.Max();
                 }
             }
 
@@ -203,9 +203,9 @@ namespace ETH_GasOMeter
                         Hash = transactionEvent.Log.TransactionHash;
                         Status = (transactionEvent.Reciept.Status.Value.Equals(1)) ? "success" : "failed";
                         From = transactionEvent.Transaction.From;
-                        GasPriceGwei = transactionEvent.Transaction.GasPrice.Value;
+                        GasPriceGwei = UnitConversion.Convert.FromWei(transactionEvent.Transaction.GasPrice.Value, UnitConversion.EthUnit.Gwei);
                         GasUsed = transactionEvent.Reciept.GasUsed.Value;
-                        FeeETH = UnitConversion.Convert.FromWei(GasPriceGwei * GasUsed, toUnit: UnitConversion.EthUnit.Ether);
+                        FeeETH = UnitConversion.Convert.FromWei(transactionEvent.Transaction.GasPrice.Value * GasUsed, toUnit: UnitConversion.EthUnit.Ether);
                     }
 
                     public string Hash { get; }
@@ -214,7 +214,7 @@ namespace ETH_GasOMeter
 
                     public string From { get; }
 
-                    public BigInteger GasPriceGwei { get; }
+                    public decimal GasPriceGwei { get; }
 
                     public BigInteger GasUsed { get; }
 
