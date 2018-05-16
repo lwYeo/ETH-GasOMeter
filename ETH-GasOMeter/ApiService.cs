@@ -15,6 +15,8 @@ namespace ETH_GasOMeter
         public delegate void APIResponseHandler(object sender, APIResponseArgs e);
         public event APIResponseHandler OnAPIResponse;
 
+        private const string DefaultAPIPath = "127.0.0.1:1888";
+
         private bool _IsOngoing;
         private HttpListener _Listener;
 
@@ -25,26 +27,33 @@ namespace ETH_GasOMeter
 
         public void Start(string apiBind)
         {
-            if (string.IsNullOrWhiteSpace(apiBind)) { throw new ArgumentException("API-bind is null or empty, API will not start."); }
+            if (string.IsNullOrWhiteSpace(apiBind))
+            {
+                OnMessage.Invoke(this, new MessageArgs(string.Format("API-bind is null or empty, using default {0}", DefaultAPIPath)));
+                apiBind = DefaultAPIPath;
+            }
 
             if (!apiBind.StartsWith("http://") || apiBind.StartsWith("https://")) { apiBind = "http://" + apiBind; }
 
             if (!apiBind.EndsWith("/")) { apiBind += "/"; }
 
-            _Listener = new HttpListener();
+            try
+            {
+                _Listener = new HttpListener();
 
-            _Listener.Prefixes.Add(apiBind);
+                _Listener.Prefixes.Add(apiBind);
 
-            _IsOngoing = true;
+                _IsOngoing = true;
 
-            try { Task.Factory.StartNew(() => Process(_Listener)); }
+                Task.Factory.StartNew(() => Process(_Listener));
+            }
             catch (Exception)
             {
                 _IsOngoing = false;
                 throw new ArgumentException("An error has occured while starting API.");
             }
         }
-        
+
         public void Stop()
         {
             if (_IsOngoing)
@@ -58,7 +67,7 @@ namespace ETH_GasOMeter
         private void Process(HttpListener listener)
         {
             listener.Start();
-            OnMessage?.Invoke(this, new MessageArgs(string.Format("API service started at '{0}'...", listener.Prefixes.ElementAt(0))));
+            OnMessage?.Invoke(this, new MessageArgs(string.Format("API service started at {0}...", listener.Prefixes.ElementAt(0))));
             while (_IsOngoing)
             {
                 Task.Delay(500);
@@ -94,7 +103,7 @@ namespace ETH_GasOMeter
                 {
                     if (_Listener != null) { _Listener.Close(); }
                 }
-                
+
                 _Listener = null;
                 disposedValue = true;
             }

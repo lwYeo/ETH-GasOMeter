@@ -21,9 +21,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 --------------------------------------------------------------------
 
-Externally-maintained libraries are included in the Software under the
-
-following license terms:
+Libraries are included in the Software under the following license terms:
 
 - Nethereum
   https://github.com/Nethereum/Nethereum/blob/master/LICENSE.md
@@ -33,4 +31,7 @@ following license terms:
 
 - Common Infrastructure Libraries for .NET
   http://netcommon.sourceforge.net/license.html
+
+- .NET Core
+  https://github.com/dotnet/core/blob/master/LICENSE.TXT
   

@@ -1,8 +1,18 @@
 # ETH-GasOMeter
 
-This application grabs Gas prices of ERC-20 contract token mining activity from the Ether network, and also from ethgasstation.info
+This application grabs Gas prices of ERC-20 contract token mining activity from the Ethereum network, and also from ethgasstation.info
 
-Built for Windows 10 with Visual Studio 2015 (requires .NET 4.5.2)
+Built for with Visual Studio 2015 (requires .NET Core 2.0, compatible with Windows / Linux / macOS)
+
+.Net Core runtime can be downloaded from the following links:
+
+	- Windows https://www.microsoft.com/net/download/windows/run
+
+	- Linux https://www.microsoft.com/net/download/linux/run
+
+	- macOS https://www.microsoft.com/net/download/macos/run
+
+--------------------------------------------------------------------
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
@@ -11,11 +21,17 @@ COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+--------------------------------------------------------------------
+
+To run the software, enter the following in the command line (excluding square brackets):
+
+	dotnet ETH-GasOMeter.dll [arg1=param1 arg2=param2]
+
 Command line arguments:
 
-	bind-api	Enable Json API via IP:port (e.g.: 127.0.0.1:4068), default disabled
+	bind-api	Bind Json API via IP:port, default 127.0.0.1:1888
 	
-	loop-delay	Delay loop query into the Ether network in miliseconds, default 5000 (avoid going too low or it will render this app unresponsive)
+	loop-delay	Delay loop query into the Ethereum network in milliseconds, default 5000 (avoid going too low or it will render this app unresponsive)
 
 Releases can be found [here](https://github.com/lwYeo/ETH-GasOMeter/releases).
 

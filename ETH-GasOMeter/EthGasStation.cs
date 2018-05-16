@@ -15,7 +15,7 @@ namespace ETH_GasOMeter
         }
 
         public EthGasStation() { }
-        
+
         [JsonProperty("blockNum")]
         public BigInteger BlockNumber { get; private set; }
 

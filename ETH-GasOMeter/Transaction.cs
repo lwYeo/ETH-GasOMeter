@@ -1,4 +1,4 @@
-﻿using Nethereum.Geth;
+﻿using Nethereum.Web3;
 using Nethereum.RPC.Eth.DTOs;
 using System;
 using System.Collections.Generic;
@@ -10,10 +10,10 @@ namespace ETH_GasOMeter
     class Transaction
     {
         public delegate void TransactionEventHandler(object sender, TransactionEventArgs e);
-        
+
         public class TransactionEvent
         {
-            public TransactionEvent(FilterLog log, Web3Geth web3)
+            public TransactionEvent(FilterLog log, Web3 web3)
             {
                 Log = log;
 

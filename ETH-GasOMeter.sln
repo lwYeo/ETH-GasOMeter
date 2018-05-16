@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27004.2005
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ETH-GasOMeter", "ETH-GasOMeter\ETH-GasOMeter.csproj", "{A6BAF4AD-E072-46D8-8185-CA041FE893D6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ETH-GasOMeter", "ETH-GasOMeter\ETH-GasOMeter.csproj", "{54D7A5E2-DED6-4781-B566-6F4A24827766}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,15 +11,15 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{A6BAF4AD-E072-46D8-8185-CA041FE893D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A6BAF4AD-E072-46D8-8185-CA041FE893D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A6BAF4AD-E072-46D8-8185-CA041FE893D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A6BAF4AD-E072-46D8-8185-CA041FE893D6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{54D7A5E2-DED6-4781-B566-6F4A24827766}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{54D7A5E2-DED6-4781-B566-6F4A24827766}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{54D7A5E2-DED6-4781-B566-6F4A24827766}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{54D7A5E2-DED6-4781-B566-6F4A24827766}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {2718FE74-5272-467A-BCC8-60CCEB5A0F0E}
+		SolutionGuid = {E41D1758-78A6-43CA-AA00-0FC28239F743}
 	EndGlobalSection
 EndGlobal

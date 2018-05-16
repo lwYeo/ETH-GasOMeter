@@ -9,7 +9,7 @@ namespace ETH_GasOMeter
     {
         private static object _Object1 = new object();
         private static object _Object2 = new object();
-        private static object _Object3= new object();
+        private static object _Object3 = new object();
 
         public static string SerializeFromObject(object obj)
         {

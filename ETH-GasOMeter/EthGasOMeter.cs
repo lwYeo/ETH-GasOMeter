@@ -1,4 +1,4 @@
-﻿using Nethereum.Geth;
+﻿using Nethereum.Web3;
 using Nethereum.Hex.HexTypes;
 using Nethereum.JsonRpc.Client;
 using Nethereum.RPC.Eth.Blocks;
@@ -48,7 +48,7 @@ namespace ETH_GasOMeter
 
             while (string.IsNullOrWhiteSpace(selectedAddress))
             {
-                OnRequestUserInput(this, request);
+                OnRequestUserInput?.Invoke(this, request);
 
                 switch (request.UserInput)
                 {
@@ -88,7 +88,7 @@ namespace ETH_GasOMeter
         {
             var lastBlockNo = new BigInteger(0);
             var client = new RpcClient(new Uri(InfuraDevRPC));
-            var web3 = new Web3Geth(client);
+            var web3 = new Web3(client);
             while (!token.IsCancellationRequested)
             {
                 try
@@ -99,7 +99,7 @@ namespace ETH_GasOMeter
                         Task.Delay(_DelayLoopMS);
                         continue;
                     }
-                    
+
                     var ethGasStation = Task.Factory.StartNew(() =>
                     {
                         var tempGasStation = EthGasStation.GetLatestGasStation();
@@ -168,7 +168,7 @@ namespace ETH_GasOMeter
         #region IDisposable Support
 
         private bool disposedValue = false; // To detect redundant calls
-        
+
         protected virtual void Dispose(bool disposing)
         {
             if (!disposedValue)

@@ -61,7 +61,7 @@ namespace ETH_GasOMeter
         private static void _Instance_OnRequestUserInput(object sender, EthGasOMeter.RequestUserInputArgs e)
         {
             Console.Write(e.Message);
-            e.UserInput = Console.ReadLine();
+            while (e.UserInput == null) { e.UserInput = Console.ReadLine(); }
         }
 
         private static void _APIService_OnMessage(object sender, MessageArgs e) { Console.WriteLine(e.Message); }
@@ -75,11 +75,12 @@ namespace ETH_GasOMeter
 
         private static void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
         {
+            Console.WriteLine("Ctrl-C was pressed.");
             e.Cancel = true;
             if (_IsCancelKeyPressed)
             {
                 _ManualResetEvent.Set();
-                return;
+                Environment.Exit(0);
             }
             _IsCancelKeyPressed = true;
 
@@ -102,7 +103,7 @@ namespace ETH_GasOMeter
             _Instance.OnTransactionLog += TransactionLogHandler;
             _Instance.OnRequestUserInput += _Instance_OnRequestUserInput;
             Task.Factory.StartNew(() => { _Instance.Start(showCancel: true); }).
-                         ContinueWith((t) =>
+                         ContinueWith((task) =>
                          {
                              try
                              {
