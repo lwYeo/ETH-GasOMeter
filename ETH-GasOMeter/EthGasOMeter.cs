@@ -32,10 +32,7 @@ namespace ETH_GasOMeter
         private Task _Task;
         private CancellationTokenSource _CancellationTokenSource;
 
-        public EthGasOMeter(int delayLoopMS)
-        {
-            _DelayLoopMS = delayLoopMS;
-        }
+        public EthGasOMeter(int delayLoopMS) => _DelayLoopMS = delayLoopMS;
 
         public void Start(bool showCancel = false)
         {
@@ -174,6 +171,15 @@ namespace ETH_GasOMeter
             catch { return epoch; }
         }
 
+        public class RequestUserInputArgs : EventArgs
+        {
+            public RequestUserInputArgs(string message) => Message = message;
+
+            public string Message { get; }
+
+            public string UserInput { get; set; }
+        }
+
         #region IDisposable Support
 
         private bool disposedValue = false; // To detect redundant calls
@@ -231,17 +237,5 @@ namespace ETH_GasOMeter
         }
 
         #endregion
-
-        public class RequestUserInputArgs : EventArgs
-        {
-            public RequestUserInputArgs(string message)
-            {
-                Message = message;
-            }
-
-            public string Message { get; }
-
-            public string UserInput { get; set; }
-        }
     }
 }

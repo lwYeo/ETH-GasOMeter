@@ -155,7 +155,17 @@ namespace ETH_GasOMeter
 
         private static void _Instance_OnEthGasStationLog(object sender, Transaction.EthGasStationEventArgs e)
         {
-            if (_EthGasStation == null || e.EthGasStation.BlockNumber > _EthGasStation.BlockNumber) { _EthGasStation = e.EthGasStation; }
+            if (_EthGasStation == null || e.EthGasStation.BlockNumber > _EthGasStation.BlockNumber)
+            {
+                _EthGasStation = e.EthGasStation;
+                Console.WriteLine();
+                Console.WriteLine(string.Format("Latest Block number from ethgasstation.info: {0}", _EthGasStation.BlockNumber));
+                Console.WriteLine(string.Format("Gas Use: {0}%", _EthGasStation.GasUsePercent));
+                Console.WriteLine(string.Format("SafeLow: {0} GWei, estimate confirmation: {1} mins", _EthGasStation.SafeLowGwei, _EthGasStation.SafeLowWaitMinutes));
+                Console.WriteLine(string.Format("Average: {0} GWei, estimate confirmation: {1} mins", _EthGasStation.AverageGwei, _EthGasStation.AverageWaitMinutes));
+                Console.WriteLine(string.Format("Fast:    {0} GWei, estimate confirmation: {1} mins", _EthGasStation.FastGwei, _EthGasStation.FastWaitMinutes));
+                Console.WriteLine(string.Format("Fastest: {0} GWei, estimate confirmation: {1} mins", _EthGasStation.FastestGwei, _EthGasStation.FastestWaitMinutes));
+            }
         }
 
         private static void TransactionLogHandler(object sender, Transaction.TransactionEventArgs e)
@@ -165,17 +175,6 @@ namespace ETH_GasOMeter
                 try
                 {
                     UpdateEventLogs(e);
-                    
-                    if (_EthGasStation != null)
-                    {
-                        Console.WriteLine();
-                        Console.WriteLine(string.Format("Latest Block number from ethgasstation.info: {0}", _EthGasStation.BlockNumber));
-                        Console.WriteLine(string.Format("Gas Use: {0}%", _EthGasStation.GasUsePercent));
-                        Console.WriteLine(string.Format("SafeLow: {0} GWei, estimate confirmation: {1} mins", _EthGasStation.SafeLowGwei, _EthGasStation.SafeLowWaitMinutes));
-                        Console.WriteLine(string.Format("Average: {0} GWei, estimate confirmation: {1} mins", _EthGasStation.AverageGwei, _EthGasStation.AverageWaitMinutes));
-                        Console.WriteLine(string.Format("Fast:    {0} GWei, estimate confirmation: {1} mins", _EthGasStation.FastGwei, _EthGasStation.FastWaitMinutes));
-                        Console.WriteLine(string.Format("Fastest: {0} GWei, estimate confirmation: {1} mins", _EthGasStation.FastestGwei, _EthGasStation.FastestWaitMinutes));
-                    }
 
                     Console.WriteLine();
                     Console.WriteLine(string.Format("Last Block number: {0} - Timestamp: {1}", e.BlockNumber, e.BlockTimestamp));

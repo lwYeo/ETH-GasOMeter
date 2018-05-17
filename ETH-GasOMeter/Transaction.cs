@@ -46,10 +46,7 @@ namespace ETH_GasOMeter
 
         public class EthGasStationEventArgs : EventArgs
         {
-            public EthGasStationEventArgs(EthGasStation ethGasStation)
-            {
-                EthGasStation = ethGasStation;
-            }
+            public EthGasStationEventArgs(EthGasStation ethGasStation) => EthGasStation = ethGasStation;
 
             public EthGasStation EthGasStation { get; }
         }
@@ -63,15 +60,9 @@ namespace ETH_GasOMeter
                 Events = data?.ToArray();
             }
 
-            public BigInteger BlockNumber
-            {
-                get { return Block.Number.Value; }
-            }
+            public BigInteger BlockNumber => Block.Number.Value;
 
-            public DateTime BlockTimestamp
-            {
-                get { return UnixTimestampConverter(Block.Timestamp.HexValue.ToString()); }
-            }
+            public DateTime BlockTimestamp => UnixTimestampConverter(Block.Timestamp.HexValue.ToString());
 
             public TransactionEvent[] Events { get; }
 
