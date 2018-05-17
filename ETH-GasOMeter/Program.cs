@@ -206,7 +206,7 @@ namespace ETH_GasOMeter
             {
                 if (_EventLogList == null) { _EventLogList = new List<Transaction.TransactionEventArgs>(Int32.Parse(_Args["recent-blocks"])); }
 
-                _EventLogList.Add(e);
+                _EventLogList.Insert(0, e);
                 _EventLogList.RemoveAll(log => log.BlockNumber < e.BlockNumber - Int32.Parse(_Args["recent-blocks"]));
             }
             catch (Exception ex) { Console.WriteLine(ex.ToString()); }
