@@ -125,7 +125,7 @@ namespace ETH_GasOMeter
             _Instance.Dispose();
             _Instance = null;
 
-            _EventLogList.Clear();
+            if (_EventLogList != null) { _EventLogList.Clear(); }
 
             GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true);
             
