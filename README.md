@@ -23,7 +23,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 --------------------------------------------------------------------
 
-If required, edit the following files, before running the software:
+The following files can be used to run the software:
 
 	- Linux 
 	./ETH-GasOMeter.sh
@@ -31,7 +31,11 @@ If required, edit the following files, before running the software:
 	- Windows
 	ETH-GasOMeter.bat
 
-If required, edit the above file(s) with the command line arguments below:
+To directly run the software, enter as below:
+
+	dotnet ETH-GasOMeter.dll [arg1=param1 arg2=param2]
+
+If required, edit the above batch script file(s) with the command line arguments below:
 
 	bind-api	Bind Json API via IP:port, default 127.0.0.1:1888
 	
