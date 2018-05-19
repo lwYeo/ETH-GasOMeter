@@ -35,14 +35,33 @@ namespace ETH_GasOMeter
         private Task _Task;
         private CancellationTokenSource _CancellationTokenSource;
 
-        public EthGasOMeter(int delayLoopMS, string userWeb3)
+        public EthGasOMeter(int delayLoopMS, string userWeb3, string address)
         {
             _DelayLoopMS = delayLoopMS;
             _UserWeb3 = userWeb3;
+            MonitorAddress = address;
         }
 
         public void Start(bool showCancel = false)
         {
+            var addressUtil = new AddressUtil();
+            
+            if (!string.IsNullOrWhiteSpace(MonitorAddress))
+            {
+                if (MonitorAddress.StartsWith("0x") && addressUtil.IsValidAddressLength(MonitorAddress) && addressUtil.IsChecksumAddress(MonitorAddress))
+                {
+                    _CancellationTokenSource = new CancellationTokenSource();
+                    _Task = Task.Factory.StartNew(() => RunMeter(MonitorAddress, _CancellationTokenSource.Token), _CancellationTokenSource.Token);
+                    return;
+                }
+                else
+                {
+                    MonitorAddress = null;
+                    OnMessage?.Invoke(this, new MessageArgs("Invalid user defined address."));
+                }
+            }
+
+            var selectedAddress = string.Empty;
             var query = new StringBuilder();
             query.AppendLine("Select Token Contract:");
             query.AppendLine("1: 0xBitcoin");
@@ -51,7 +70,6 @@ namespace ETH_GasOMeter
             query.AppendLine("or enter Contract Address (including '0x' prefix)");
             if (showCancel) { query.AppendLine("Press Ctrl-C again to quit."); }
 
-            var selectedAddress = string.Empty;
             var request = new RequestUserInputArgs(query.ToString());
 
             while (string.IsNullOrWhiteSpace(selectedAddress))
@@ -78,7 +96,6 @@ namespace ETH_GasOMeter
                     default:
                         if (request.UserInput == null) { break; }
 
-                        var addressUtil = new AddressUtil();
                         if (request.UserInput.StartsWith("0x") && addressUtil.IsValidAddressLength(request.UserInput) && addressUtil.IsChecksumAddress(request.UserInput))
                         {
                             selectedAddress = request.UserInput;
@@ -163,7 +180,14 @@ namespace ETH_GasOMeter
 
                     lastBlockNo = tempLastBlockNo;
                 }
-                catch (Exception ex) { OnMessage?.Invoke(this, new MessageArgs(ex.ToString())); ; }
+                catch (AggregateException ex)
+                {
+                    OnMessage?.Invoke(this,
+                                      new MessageArgs(ex.InnerExceptions.All(iEx => iEx.GetType().Equals(typeof(System.Net.Http.HttpRequestException))) ?
+                                                      ex.InnerExceptions[0].Message :
+                                                      ex.ToString()));
+                }
+                catch (Exception ex) { OnMessage?.Invoke(this, new MessageArgs(ex.ToString())); }
 
                 GC.Collect(GC.MaxGeneration, GCCollectionMode.Optimized, false);
                 Task.Delay(_DelayLoopMS);

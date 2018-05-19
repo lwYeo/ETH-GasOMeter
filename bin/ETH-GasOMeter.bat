@@ -11,7 +11,7 @@ goto end
 
 :dotNetFound
 echo .NET Core is available, starting ETH-GasOMeter...
-call dotnet ETH-GasOMeter.dll
+dotnet ETH-GasOMeter.dll address=0xB6eD7644C69416d67B522e20bC294A9a9B405B31
 
 :end
 echo.

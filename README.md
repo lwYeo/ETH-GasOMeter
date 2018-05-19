@@ -23,11 +23,15 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 --------------------------------------------------------------------
 
-To run the software, enter the following in the command line (excluding square brackets):
+If required, edit the following files, before running the software:
 
-	dotnet ETH-GasOMeter.dll [arg1=param1 arg2=param2]
+	- Linux 
+	./ETH-GasOMeter.sh
+	
+	- Windows
+	ETH-GasOMeter.bat
 
-Command line arguments:
+If required, edit the above file(s) with the command line arguments below:
 
 	bind-api	Bind Json API via IP:port, default 127.0.0.1:1888
 	
@@ -36,8 +40,14 @@ Command line arguments:
 	recent-blocks	API display a history of recent blocks, default 120 (approx. 30 minutes)
 	
 	api-summary	API display summarised fields, default true (false to display original fields)
+	
+	silent		To improve performance for API monitoring systems only, default false
+	
+	web3-url	User-defined web3 provider URL, default developer's mainnet Infura provider URL
+	
+	address		User-defined address to monitor so to start the process immediately, default null (will pause at the address selection menu)	
 
-Releases can be found [here](https://github.com/lwYeo/ETH-GasOMeter/releases).
+### Releases can be found [here](https://github.com/lwYeo/ETH-GasOMeter/releases).
 
 --------------------------------------------------------------------
 

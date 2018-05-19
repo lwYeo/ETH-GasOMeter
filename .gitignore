@@ -4,6 +4,8 @@
 *.ide-shm
 *.ide-wal
 *.lock
+*.nupkg
+*.nuspec
 *.pdb
 *.suo
 *.user
@@ -20,7 +22,6 @@ ETH-GasOMeter/bin/Debug/netcoreapp2.0/ETH-GasOMeter.deps.json
 ETH-GasOMeter/bin/Debug/netcoreapp2.0/ETH-GasOMeter.dll
 ETH-GasOMeter/bin/Debug/netcoreapp2.0/ETH-GasOMeter.runtimeconfig.dev.json
 ETH-GasOMeter/bin/Debug/netcoreapp2.0/ETH-GasOMeter.runtimeconfig.json
-ETH-GasOMeter/obj/Release/ETH-GasOMeter.1.1.1.nuspec
 ETH-GasOMeter/bin/Release/netcoreapp2.0/ETH-GasOMeter.deps.json
 ETH-GasOMeter/bin/Release/netcoreapp2.0/ETH-GasOMeter.dll
 ETH-GasOMeter/bin/Release/netcoreapp2.0/ETH-GasOMeter.runtimeconfig.dev.json

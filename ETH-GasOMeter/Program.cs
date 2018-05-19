@@ -23,20 +23,19 @@ namespace ETH_GasOMeter
         static void Main(string[] args)
         {
             CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
-            Console.Title = "ETH-GasOMeter by lwyeo (2018)";
+            Console.Title = "ETH-GasOMeter by lwYeo (2018)";
             Console.CancelKeyPress += Console_CancelKeyPress;
 
             _ManualResetEvent = new ManualResetEvent(false);
 
-            _Args = new Dictionary<string, string>();
-            args.ToList().ForEach(a => _Args.Add(a.Split('=').First().ToLowerInvariant(), a.Split('=').Last()));
+            _Args = args.ToDictionary(k => k.Split('=').First().ToLower(), v => v.Split('=').Last());
             CheckArguments(ref _Args);
 
             while (_Instance == null)
             {
                 try
                 {
-                    _Instance = new EthGasOMeter(Convert.ToInt32(_Args["loop-delay"]), _Args["web3-url"]);
+                    _Instance = new EthGasOMeter(Convert.ToInt32(_Args["loop-delay"]), _Args["web3-url"], _Args["address"]);
                     _Instance.OnMessage += _Instance_OnMessage;
                     _Instance.OnEthGasStationLog += _Instance_OnEthGasStationLog;
                     _Instance.OnTransactionLog += TransactionLogHandler;
@@ -99,6 +98,8 @@ namespace ETH_GasOMeter
             if (!args.ContainsKey("silent")) { args.Add("silent", "false"); }
 
             if (!args.ContainsKey("web3-url")) { args.Add("web3-url", null); }
+
+            if (!args.ContainsKey("address")) { args.Add("address", null); }
         }
 
         private static void _Instance_OnRequestUserInput(object sender, EthGasOMeter.RequestUserInputArgs e)
@@ -150,7 +151,7 @@ namespace ETH_GasOMeter
             {
                 try
                 {
-                    _Instance = new EthGasOMeter(Convert.ToInt32(_Args["loop-delay"]), _Args["web3-url"]);
+                    _Instance = new EthGasOMeter(Convert.ToInt32(_Args["loop-delay"]), _Args["web3-url"], null);
                     _Instance.OnMessage += _Instance_OnMessage;
                     _Instance.OnEthGasStationLog += _Instance_OnEthGasStationLog;
                     _Instance.OnTransactionLog += TransactionLogHandler;
