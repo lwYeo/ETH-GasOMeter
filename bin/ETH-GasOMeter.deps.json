@@ -1,19 +1,25 @@
 {
   "runtimeTarget": {
     "name": ".NETCoreApp,Version=v2.0",
-    "signature": "c1cef591c9809daf3c39e89f2b8c1499d11fa8c0"
+    "signature": "3f1f193f526b8abefef6403338429f00715907be"
   },
   "compilationOptions": {},
   "targets": {
     ".NETCoreApp,Version=v2.0": {
       "ETH-GasOMeter/1.1.1": {
         "dependencies": {
+          "BouncyCastle": "1.8.2",
           "Common.Logging.Core": "3.4.1",
           "Nethereum.Portable": "2.4.0",
           "Newtonsoft.Json": "11.0.2"
         },
         "runtime": {
           "ETH-GasOMeter.dll": {}
+        }
+      },
+      "BouncyCastle/1.8.2": {
+        "runtime": {
+          "lib/BouncyCastle.Crypto.dll": {}
         }
       },
       "Common.Logging.Core/3.4.1": {
@@ -249,6 +255,13 @@
       "type": "project",
       "serviceable": false,
       "sha512": ""
+    },
+    "BouncyCastle/1.8.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-1VNcrEowB9ucPhsZRENMx4GFbzJSvQ8P0XF+ZEEMfam8loKVRBPVZVjwVHx95lEs2NF6QSeED8WIQhoQ02q9PQ==",
+      "path": "bouncycastle/1.8.2",
+      "hashPath": "bouncycastle.1.8.2.nupkg.sha512"
     },
     "Common.Logging.Core/3.4.1": {
       "type": "package",

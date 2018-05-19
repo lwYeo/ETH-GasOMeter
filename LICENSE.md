@@ -32,6 +32,9 @@ Libraries are included in the Software under the following license terms:
 - Common Infrastructure Libraries for .NET
   http://netcommon.sourceforge.net/license.html
 
+- Bouncy Castle
+  https://www.bouncycastle.org/licence.html
+
 - .NET Core
   https://github.com/dotnet/core/blob/master/LICENSE.TXT
   
