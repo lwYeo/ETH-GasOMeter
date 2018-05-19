@@ -26,6 +26,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 The following files can be used to run the software:
 
 	- Linux 
+	sudo chmod u+x ETH-GasOMeter.sh
 	./ETH-GasOMeter.sh
 	
 	- Windows

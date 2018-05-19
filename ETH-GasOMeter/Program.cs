@@ -189,11 +189,11 @@ namespace ETH_GasOMeter
         {
             lock (sender)
             {
-                if (Convert.ToBoolean(_Args["silent"])) { return; }
-
                 if (_EthGasStation == null || e.EthGasStation.BlockNumber > _EthGasStation.BlockNumber)
                 {
                     _EthGasStation = e.EthGasStation;
+                    if (Convert.ToBoolean(_Args["silent"])) { return; }
+
                     Console.WriteLine();
                     Console.WriteLine(string.Format("Latest Block number from ethgasstation.info: {0}", _EthGasStation.BlockNumber));
                     Console.WriteLine(string.Format("Gas Use: {0}%", _EthGasStation.GasUsePercent));
