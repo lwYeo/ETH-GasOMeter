@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,38 +13,49 @@ namespace ETH_GasOMeter
 {
     class ApiService : IDisposable
     {
+        public const string DefaultAPIPath = "127.0.0.1:1888";
+
         public delegate void MessageHandler(object sender, MessageArgs e);
         public event MessageHandler OnMessage;
 
         public delegate void APIResponseHandler(object sender, ref APIResponseArgs e);
         public event APIResponseHandler OnAPIResponse;
 
-        public const string DefaultAPIPath = "127.0.0.1:1888";
-
         private bool _IsOngoing;
         private HttpListener _Listener;
 
         public ApiService()
         {
-            if (!HttpListener.IsSupported) { throw new NotSupportedException("Obsolete Windows version detected, API will not start."); }
+            if (!HttpListener.IsSupported) { throw new NotSupportedException("Obsolete OS detected, API will not start."); }
         }
 
         public void Start(string apiBind)
         {
-            if (string.IsNullOrWhiteSpace(apiBind))
+            var httpBind = apiBind.ToString();
+            if (string.IsNullOrWhiteSpace(httpBind))
             {
                 OnMessage.Invoke(this, new MessageArgs(string.Format("API-bind is null or empty, using default {0}", DefaultAPIPath)));
-                apiBind = DefaultAPIPath;
+                httpBind = DefaultAPIPath;
             }
 
-            if (!apiBind.StartsWith("http://") || apiBind.StartsWith("https://")) { apiBind = "http://" + apiBind; }
+            if (!httpBind.StartsWith("http://") || httpBind.StartsWith("https://")) { httpBind = "http://" + httpBind; }
+            if (!httpBind.EndsWith("/")) { httpBind += "/"; }
 
-            if (!apiBind.EndsWith("/")) { apiBind += "/"; }
+            if (!int.TryParse(httpBind.Split(':')[2].TrimEnd('/'), out int port)) { throw new ArgumentException("Invalid port provided."); }
+
+            var tempIPAddress = httpBind.Split("//")[1].Split(':')[0];
+            if (!IPAddress.TryParse(tempIPAddress, out IPAddress ipAddress)) { throw new ArgumentException("Invalid IP address provided."); }
+
+            using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp))
+            {
+                try { socket.Bind(new IPEndPoint(ipAddress, port)); }
+                catch (Exception) { throw new ArgumentException(string.Format("API failed to bind to {0}", apiBind)); }
+            };
 
             try
             {
                 _Listener = new HttpListener();
-                _Listener.Prefixes.Add(apiBind);
+                _Listener.Prefixes.Add(httpBind);
                 _IsOngoing = true;
 
                 Task.Factory.StartNew(() => Process(_Listener));
@@ -95,22 +107,16 @@ namespace ETH_GasOMeter
 
         public class APIResponseArgs : EventArgs
         {
-            public APIResponseArgs(bool isSummary, List<Transaction.TransactionEventArgs> transactionEventList, EthGasStation ethGasStation)
+            private static readonly Newtonsoft.Json.JsonSerializerSettings settings = new Newtonsoft.Json.JsonSerializerSettings()
             {
-                if (isSummary)
-                {
-                    Response = Json.SerializeFromObject(new TransactionsSummary(transactionEventList, ethGasStation), new Newtonsoft.Json.JsonSerializerSettings()
-                    {
-                        ContractResolver = new Json.ClassNameContractResolver()
-                    });
-                }
-                else
-                {
-                    Response = Json.SerializeFromObject(new Transactions(transactionEventList, ethGasStation), new Newtonsoft.Json.JsonSerializerSettings()
-                    {
-                        ContractResolver = new Json.ClassNameContractResolver()
-                    });
-                }
+                ContractResolver = new Json.ClassNameContractResolver()
+            };
+
+            public APIResponseArgs(bool isSummary, string address, EthGasStation ethGasStation, List<Transaction.TransactionEventArgs> transactionEventList)
+            {
+                Response = isSummary ?
+                    Json.SerializeFromObject(new TransactionsSummary(address, ethGasStation, transactionEventList), settings) :
+                    Json.SerializeFromObject(new Transactions(address, ethGasStation, transactionEventList), settings);
             }
 
             public string Response { get; }
@@ -118,11 +124,14 @@ namespace ETH_GasOMeter
 
         public class Transactions
         {
-            public Transactions(List<Transaction.TransactionEventArgs> transactionEventList, EthGasStation ethGasStation)
+            public Transactions(string address, EthGasStation ethGasStation, List<Transaction.TransactionEventArgs> transactionEventList)
             {
-                Blocks = transactionEventList;
+                MonitorAddress = address;
                 EthGasStation = ethGasStation;
+                Blocks = transactionEventList;
             }
+
+            public string MonitorAddress { get; }
 
             public EthGasStation EthGasStation { get; }
 
@@ -131,13 +140,16 @@ namespace ETH_GasOMeter
 
         public class TransactionsSummary
         {
-            public TransactionsSummary(List<Transaction.TransactionEventArgs> transactionEventList, EthGasStation ethGasStation)
+            public TransactionsSummary(string address, EthGasStation ethGasStation, List<Transaction.TransactionEventArgs> transactionEventList)
             {
+                MonitorAddress = address;
                 EthGasStation = ethGasStation;
 
                 Blocks = new List<Block>(transactionEventList.Count);
                 transactionEventList.ForEach(txEvent => Blocks.Add(new Block(txEvent.BlockNumber, txEvent.BlockTimestamp, txEvent.Events)));
             }
+
+            public string MonitorAddress { get; }
 
             public decimal HighestGweiOrGasStationSafeLow
             {

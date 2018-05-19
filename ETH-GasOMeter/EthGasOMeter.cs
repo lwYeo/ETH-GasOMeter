@@ -1,7 +1,5 @@
 ﻿using Nethereum.Web3;
 using Nethereum.Hex.HexTypes;
-using Nethereum.JsonRpc.Client;
-using Nethereum.RPC.Eth.Blocks;
 using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Util;
 using System;
@@ -17,6 +15,8 @@ namespace ETH_GasOMeter
 {
     class EthGasOMeter : IDisposable
     {
+        private static DateTime Epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
         public event Transaction.EthGasStationEventHandler OnEthGasStationLog;
         public event Transaction.TransactionEventHandler OnTransactionLog;
 
@@ -26,13 +26,20 @@ namespace ETH_GasOMeter
         public delegate void RequestUserInputHandler(object sender, RequestUserInputArgs e);
         public event RequestUserInputHandler OnRequestUserInput;
 
-        private const string InfuraDevRPC = "https://mainnet.infura.io/ANueYSYQTstCr2mFJjPE";
-        
+        public string MonitorAddress { get; private set; }
+
+        private const string InfuraDevWeb3 = "https://mainnet.infura.io/ANueYSYQTstCr2mFJjPE";
+
+        private string _UserWeb3;
         private int _DelayLoopMS;
         private Task _Task;
         private CancellationTokenSource _CancellationTokenSource;
 
-        public EthGasOMeter(int delayLoopMS) => _DelayLoopMS = delayLoopMS;
+        public EthGasOMeter(int delayLoopMS, string userWeb3)
+        {
+            _DelayLoopMS = delayLoopMS;
+            _UserWeb3 = userWeb3;
+        }
 
         public void Start(bool showCancel = false)
         {
@@ -87,14 +94,16 @@ namespace ETH_GasOMeter
 
         private void RunMeter(string selectedAddress, CancellationToken token)
         {
+            MonitorAddress = selectedAddress;
+
             var lastBlockNo = new BigInteger(0);
-            var client = new RpcClient(new Uri(InfuraDevRPC));
-            var web3 = new Web3(client);
+            var web3 = new Web3(string.IsNullOrWhiteSpace(_UserWeb3) ? InfuraDevWeb3 : _UserWeb3);
+
             while (!token.IsCancellationRequested)
             {
                 try
                 {
-                    var tempLastBlockNo = new HexBigInteger(new EthBlockNumber(client).SendRequestAsync().Result.Value - 1);
+                    var tempLastBlockNo = new HexBigInteger(web3.Eth.Blocks.GetBlockNumber.SendRequestAsync().Result.Value - 1);
                     if (tempLastBlockNo.Value <= lastBlockNo)
                     {
                         Task.Delay(_DelayLoopMS);
@@ -118,9 +127,9 @@ namespace ETH_GasOMeter
 
                     var filterInput = new NewFilterInput()
                     {
-                        Address = new string[] { selectedAddress },
+                        Address = new string[] { MonitorAddress },
                         FromBlock = new BlockParameter(tempLastBlockNo),
-                        ToBlock = new BlockParameter(new EthBlockNumber(client).SendRequestAsync().Result)
+                        ToBlock = new BlockParameter(web3.Eth.Blocks.GetBlockNumber.SendRequestAsync().Result)
                     };
 
                     var logs = Task.Factory.StartNew(() =>
@@ -146,7 +155,9 @@ namespace ETH_GasOMeter
                                            ToList();
                     }).ContinueWith((txEventList) =>
                     {
-                        OnTransactionLog?.Invoke(this, new Transaction.TransactionEventArgs(txEventList.Result, lastBlock.Result, ConvertUNIXTimestampToLocalDateTime));
+                        OnTransactionLog?.Invoke(this, new Transaction.TransactionEventArgs(MonitorAddress, 
+                                                                                            txEventList.Result, lastBlock.Result, 
+                                                                                            ConvertUNIXTimestampToLocalDateTime));
                         return txEventList.Result;
                     });
 
@@ -161,14 +172,12 @@ namespace ETH_GasOMeter
 
         private DateTime ConvertUNIXTimestampToLocalDateTime(string timestamp)
         {
-            var epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-
-            if (string.IsNullOrWhiteSpace(timestamp)) { return epoch; }
+            if (string.IsNullOrWhiteSpace(timestamp)) { return Epoch; }
 
             if (timestamp.StartsWith("0x")) { timestamp = timestamp.Substring(2); }
 
-            try { return epoch.AddSeconds(ulong.Parse(timestamp, NumberStyles.HexNumber)).ToLocalTime(); }
-            catch { return epoch; }
+            try { return Epoch.AddSeconds(ulong.Parse(timestamp, NumberStyles.HexNumber)).ToLocalTime(); }
+            catch { return Epoch; }
         }
 
         public class RequestUserInputArgs : EventArgs

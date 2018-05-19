@@ -32,12 +32,25 @@ namespace ETH_GasOMeter
             args.ToList().ForEach(a => _Args.Add(a.Split('=').First().ToLowerInvariant(), a.Split('=').Last()));
             CheckArguments(ref _Args);
 
-            _Instance = new EthGasOMeter(Convert.ToInt32(_Args["loop-delay"]));
-            _Instance.OnMessage += _Instance_OnMessage;
-            _Instance.OnEthGasStationLog += _Instance_OnEthGasStationLog;
-            _Instance.OnTransactionLog += TransactionLogHandler;
-            _Instance.OnRequestUserInput += _Instance_OnRequestUserInput;
-            _Instance.Start();
+            while (_Instance == null)
+            {
+                try
+                {
+                    _Instance = new EthGasOMeter(Convert.ToInt32(_Args["loop-delay"]), _Args["web3-url"]);
+                    _Instance.OnMessage += _Instance_OnMessage;
+                    _Instance.OnEthGasStationLog += _Instance_OnEthGasStationLog;
+                    _Instance.OnTransactionLog += TransactionLogHandler;
+                    _Instance.OnRequestUserInput += _Instance_OnRequestUserInput;
+                    _Instance.Start();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                    Console.WriteLine();
+                    try { _Instance.Dispose(); } catch { }
+                    _Instance = null;
+                }
+            }
 
             try
             {
@@ -82,6 +95,10 @@ namespace ETH_GasOMeter
             }
 
             if (!args.ContainsKey("api-summary")) { args.Add("api-summary", "true"); }
+
+            if (!args.ContainsKey("silent")) { args.Add("silent", "false"); }
+
+            if (!args.ContainsKey("web3-url")) { args.Add("web3-url", null); }
         }
 
         private static void _Instance_OnRequestUserInput(object sender, EthGasOMeter.RequestUserInputArgs e)
@@ -97,7 +114,7 @@ namespace ETH_GasOMeter
         private static void _APIService_OnAPIResponse(object sender, ref ApiService.APIResponseArgs e)
         {
             if (_EthGasStation == null || _EventLogList == null) { return; }
-            e = new ApiService.APIResponseArgs(Convert.ToBoolean(_Args["api-summary"]), _EventLogList, _EthGasStation);
+            e = new ApiService.APIResponseArgs(Convert.ToBoolean(_Args["api-summary"]), _Instance.MonitorAddress, _EthGasStation, _EventLogList);
         }
 
         private static void Console_CancelKeyPress(object sender, ConsoleCancelEventArgs e)
@@ -128,43 +145,62 @@ namespace ETH_GasOMeter
             if (_EventLogList != null) { _EventLogList.Clear(); }
 
             GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, true);
-            
-            _Instance = new EthGasOMeter(Convert.ToInt32(_Args["loop-delay"]));
-            _Instance.OnMessage += _Instance_OnMessage;
-            _Instance.OnEthGasStationLog += _Instance_OnEthGasStationLog;
-            _Instance.OnTransactionLog += TransactionLogHandler;
-            _Instance.OnRequestUserInput += _Instance_OnRequestUserInput;
-            Task.Factory.StartNew(() => { _Instance.Start(showCancel: true); }).
-                         ContinueWith((task) =>
-                         {
-                             try
-                             {
-                                 _APIService = new ApiService();
-                                 _APIService.OnMessage += _APIService_OnMessage;
-                                 _APIService.OnAPIResponse += _APIService_OnAPIResponse;
 
-                                 _APIService.Start(_Args["api-bind"]);
-                             }
-                             catch (ArgumentException ex) { Console.WriteLine(ex.Message); }
-                             catch (NotSupportedException ex) { Console.WriteLine(ex.Message); }
-                             catch (Exception ex) { Console.WriteLine(ex.ToString()); }
-                             
-                             _IsCancelKeyPressed = false;
-                         });
+            while (_Instance == null)
+            {
+                try
+                {
+                    _Instance = new EthGasOMeter(Convert.ToInt32(_Args["loop-delay"]), _Args["web3-url"]);
+                    _Instance.OnMessage += _Instance_OnMessage;
+                    _Instance.OnEthGasStationLog += _Instance_OnEthGasStationLog;
+                    _Instance.OnTransactionLog += TransactionLogHandler;
+                    _Instance.OnRequestUserInput += _Instance_OnRequestUserInput;
+
+                    Task.Factory.StartNew(() => { _Instance.Start(showCancel: true); }).
+                                 ContinueWith((task) =>
+                                 {
+                                     try
+                                     {
+                                         _APIService = new ApiService();
+                                         _APIService.OnMessage += _APIService_OnMessage;
+                                         _APIService.OnAPIResponse += _APIService_OnAPIResponse;
+
+                                         _APIService.Start(_Args["api-bind"]);
+                                     }
+                                     catch (ArgumentException ex) { Console.WriteLine(ex.Message); }
+                                     catch (NotSupportedException ex) { Console.WriteLine(ex.Message); }
+                                     catch (Exception ex) { Console.WriteLine(ex.ToString()); }
+
+                                     _IsCancelKeyPressed = false;
+                                 });
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                    Console.WriteLine();
+                    try { _Instance.Dispose(); } catch { }
+                    _Instance = null;
+                }
+            }
         }
 
         private static void _Instance_OnEthGasStationLog(object sender, Transaction.EthGasStationEventArgs e)
         {
-            if (_EthGasStation == null || e.EthGasStation.BlockNumber > _EthGasStation.BlockNumber)
+            lock (sender)
             {
-                _EthGasStation = e.EthGasStation;
-                Console.WriteLine();
-                Console.WriteLine(string.Format("Latest Block number from ethgasstation.info: {0}", _EthGasStation.BlockNumber));
-                Console.WriteLine(string.Format("Gas Use: {0}%", _EthGasStation.GasUsePercent));
-                Console.WriteLine(string.Format("SafeLow: {0} GWei, estimate confirmation: {1} mins", _EthGasStation.SafeLowGwei, _EthGasStation.SafeLowWaitMinutes));
-                Console.WriteLine(string.Format("Average: {0} GWei, estimate confirmation: {1} mins", _EthGasStation.AverageGwei, _EthGasStation.AverageWaitMinutes));
-                Console.WriteLine(string.Format("Fast:    {0} GWei, estimate confirmation: {1} mins", _EthGasStation.FastGwei, _EthGasStation.FastWaitMinutes));
-                Console.WriteLine(string.Format("Fastest: {0} GWei, estimate confirmation: {1} mins", _EthGasStation.FastestGwei, _EthGasStation.FastestWaitMinutes));
+                if (Convert.ToBoolean(_Args["silent"])) { return; }
+
+                if (_EthGasStation == null || e.EthGasStation.BlockNumber > _EthGasStation.BlockNumber)
+                {
+                    _EthGasStation = e.EthGasStation;
+                    Console.WriteLine();
+                    Console.WriteLine(string.Format("Latest Block number from ethgasstation.info: {0}", _EthGasStation.BlockNumber));
+                    Console.WriteLine(string.Format("Gas Use: {0}%", _EthGasStation.GasUsePercent));
+                    Console.WriteLine(string.Format("SafeLow: {0} GWei, estimate confirmation: {1} mins", _EthGasStation.SafeLowGwei, _EthGasStation.SafeLowWaitMinutes));
+                    Console.WriteLine(string.Format("Average: {0} GWei, estimate confirmation: {1} mins", _EthGasStation.AverageGwei, _EthGasStation.AverageWaitMinutes));
+                    Console.WriteLine(string.Format("Fast:    {0} GWei, estimate confirmation: {1} mins", _EthGasStation.FastGwei, _EthGasStation.FastWaitMinutes));
+                    Console.WriteLine(string.Format("Fastest: {0} GWei, estimate confirmation: {1} mins", _EthGasStation.FastestGwei, _EthGasStation.FastestWaitMinutes));
+                }
             }
         }
 
@@ -176,7 +212,10 @@ namespace ETH_GasOMeter
                 {
                     UpdateEventLogs(e);
 
+                    if (Convert.ToBoolean(_Args["silent"])) { return; }
+
                     Console.WriteLine();
+                    Console.WriteLine(string.Format("Address: {0}", e.Address));
                     Console.WriteLine(string.Format("Last Block number: {0} - Timestamp: {1}", e.BlockNumber, e.BlockTimestamp));
 
                     foreach (var transactionEvent in e.Events)

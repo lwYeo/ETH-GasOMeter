@@ -25,11 +25,3 @@ ETH-GasOMeter/bin/Release/netcoreapp2.0/ETH-GasOMeter.deps.json
 ETH-GasOMeter/bin/Release/netcoreapp2.0/ETH-GasOMeter.dll
 ETH-GasOMeter/bin/Release/netcoreapp2.0/ETH-GasOMeter.runtimeconfig.dev.json
 ETH-GasOMeter/bin/Release/netcoreapp2.0/ETH-GasOMeter.runtimeconfig.json
-ETH-GasOMeter/bin/Release/PublishOutput/Common.Logging.Core.dll
-ETH-GasOMeter/bin/Release/PublishOutput/ETH-GasOMeter.deps.json
-ETH-GasOMeter/bin/Release/PublishOutput/ETH-GasOMeter.dll
-ETH-GasOMeter/bin/Release/PublishOutput/ETH-GasOMeter.runtimeconfig.json
-ETH-GasOMeter/bin/Release/PublishOutput/Nethereum.Portable.dll
-ETH-GasOMeter/bin/Release/PublishOutput/Newtonsoft.Json.dll
-ETH-GasOMeter/Properties/PublishProfiles/FolderProfile.pubxml
-ETH-GasOMeter/Properties/PublishProfiles/FolderProfile.pubxml.user

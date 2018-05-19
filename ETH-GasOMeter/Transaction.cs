@@ -53,12 +53,16 @@ namespace ETH_GasOMeter
 
         public class TransactionEventArgs : EventArgs
         {
-            public TransactionEventArgs(List<TransactionEvent> data, BlockWithTransactions block, Func<string, DateTime> unixTimestampConverter)
+            public TransactionEventArgs(string address, List<TransactionEvent> data, BlockWithTransactions block, 
+                                        Func<string, DateTime> unixTimestampConverter)
             {
                 UnixTimestampConverter = unixTimestampConverter;
                 Block = block;
                 Events = data?.ToArray();
+                Address = address;
             }
+
+            public string Address { get; }
 
             public BigInteger BlockNumber => Block.Number.Value;
 
