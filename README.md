@@ -38,7 +38,7 @@ To directly run the software, enter as below:
 
 If required, edit the above batch script file(s) with the command line arguments below:
 
-	bind-api	Bind Json API via IP:port, default 127.0.0.1:1888
+	api-bind	Bind Json API via IP:port, default 127.0.0.1:1888 (note: application will need to run as administator/sudo to work out of 127.0.0.1)
 	
 	loop-delay	Delay loop query into the Ethereum network in milliseconds, default 5000 (avoid going too low or it will render this application unresponsive)
 
