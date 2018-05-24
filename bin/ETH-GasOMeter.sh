@@ -5,4 +5,4 @@ command -v dotnet >/dev/null 2>&1 ||
  read -p "Press any key to continue...";
  exit 1;
 }
-dotnet ETH-GasOMeter.dll address=0xB6eD7644C69416d67B522e20bC294A9a9B405B31
+dotnet ETH-GasOMeter.dll to-address=0xB6eD7644C69416d67B522e20bC294A9a9B405B31 enable-ethgasstation=true

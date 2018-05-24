@@ -1,9 +1,7 @@
 ﻿using Nethereum.Web3;
 using Nethereum.Hex.HexTypes;
-using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Util;
 using System;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -15,64 +13,60 @@ namespace ETH_GasOMeter
 {
     class EthGasOMeter : IDisposable
     {
-        private static DateTime Epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-
-        public event Transaction.EthGasStationEventHandler OnEthGasStationLog;
-        public event Transaction.TransactionEventHandler OnTransactionLog;
-
-        public delegate void MessageHandler(object sender, MessageArgs e);
-        public event MessageHandler OnMessage;
-
-        public delegate void RequestUserInputHandler(object sender, RequestUserInputArgs e);
-        public event RequestUserInputHandler OnRequestUserInput;
-
-        public string MonitorAddress { get; private set; }
-
         private const string InfuraDevWeb3 = "https://mainnet.infura.io/ANueYSYQTstCr2mFJjPE";
 
+        public event Program.MessageHandler OnMessage;
+        public event Program.RequestUserInputHandler OnRequestUserInput;
+        public event EthGasStation.EthGasStationHandler OnEthGasStation;
+
+        public Transaction Transaction { get; }
+        public EthGasStation EthGasStation { get; private set; }
+
+        private bool _EnableEthGasStation;
         private string _UserWeb3;
-        private int _DelayLoopMS;
+        private decimal _DelayLoopSec;
         private Task _Task;
         private CancellationTokenSource _CancellationTokenSource;
 
-        public EthGasOMeter(int delayLoopMS, string userWeb3, string address)
+        public EthGasOMeter(string userWeb3, string recentBlocks, string delayLoopMS, bool enableEthGasStation)
         {
-            _DelayLoopMS = delayLoopMS;
             _UserWeb3 = userWeb3;
-            MonitorAddress = address;
+            _DelayLoopSec = decimal.Parse(delayLoopMS);
+            _EnableEthGasStation = enableEthGasStation;
+            Transaction = new Transaction(int.Parse(recentBlocks));
         }
 
-        public void Start(bool showCancel = false)
+        public void Start(string toAddress, bool showCancel = false)
         {
             var addressUtil = new AddressUtil();
             
-            if (!string.IsNullOrWhiteSpace(MonitorAddress))
+            if (!string.IsNullOrWhiteSpace(toAddress))
             {
-                if (MonitorAddress.StartsWith("0x") && addressUtil.IsValidAddressLength(MonitorAddress) && addressUtil.IsChecksumAddress(MonitorAddress))
+                if (toAddress.StartsWith("0x") && addressUtil.IsValidAddressLength(toAddress) && addressUtil.IsChecksumAddress(toAddress))
                 {
                     _CancellationTokenSource = new CancellationTokenSource();
-                    _Task = Task.Factory.StartNew(() => RunMeter(MonitorAddress, _CancellationTokenSource.Token), _CancellationTokenSource.Token);
+                    _Task = Task.Run(() => RunMeter(toAddress, _CancellationTokenSource.Token), _CancellationTokenSource.Token);
                     return;
                 }
                 else
                 {
-                    MonitorAddress = null;
+                    toAddress = null;
                     OnMessage?.Invoke(this, new MessageArgs("Invalid user defined address."));
                 }
             }
-
-            var selectedAddress = string.Empty;
+            
             var query = new StringBuilder();
             query.AppendLine("Select Token Contract:");
             query.AppendLine("1: 0xBitcoin");
             query.AppendLine("2: 0xCatEther");
             query.AppendLine("3: KIWI Token");
+            query.AppendLine("4: 0xZibit");
             query.AppendLine("or enter Contract Address (including '0x' prefix)");
             if (showCancel) { query.AppendLine("Press Ctrl-C again to quit."); }
 
             var request = new RequestUserInputArgs(query.ToString());
 
-            while (string.IsNullOrWhiteSpace(selectedAddress))
+            while (string.IsNullOrWhiteSpace(toAddress))
             {
                 OnRequestUserInput?.Invoke(this, request);
 
@@ -80,17 +74,22 @@ namespace ETH_GasOMeter
                 {
                     case "1":
                     case "0xBitcoin":
-                        selectedAddress = Contracts._0xBitcoin;
+                        toAddress = Contracts._0xBitcoin;
                         break;
 
                     case "2":
                     case "0xCatEther":
-                        selectedAddress = Contracts._0xCatether;
+                        toAddress = Contracts._0xCatether;
                         break;
 
                     case "3":
                     case "KIWI Token":
-                        selectedAddress = Contracts.KIWI_Token;
+                        toAddress = Contracts.KIWI_Token;
+                        break;
+
+                    case "4":
+                    case "0xZibit":
+                        toAddress = Contracts._0xZibit;
                         break;
 
                     default:
@@ -98,21 +97,23 @@ namespace ETH_GasOMeter
 
                         if (request.UserInput.StartsWith("0x") && addressUtil.IsValidAddressLength(request.UserInput) && addressUtil.IsChecksumAddress(request.UserInput))
                         {
-                            selectedAddress = request.UserInput;
+                            toAddress = request.UserInput;
                         }
-                        else { OnMessage?.Invoke(this, new MessageArgs("Invalid address.")); }
+                        else
+                        {
+                            OnMessage?.Invoke(this, new MessageArgs("Invalid address."));
+                            request.UserInput = null;
+                        }
                         break;
                 }
             }
-
             _CancellationTokenSource = new CancellationTokenSource();
-            _Task = Task.Factory.StartNew(() => RunMeter(selectedAddress, _CancellationTokenSource.Token), _CancellationTokenSource.Token);
+            _Task = Task.Run(() => RunMeter(toAddress, _CancellationTokenSource.Token), _CancellationTokenSource.Token);
         }
 
-        private void RunMeter(string selectedAddress, CancellationToken token)
+        private void RunMeter(string toAddress, CancellationToken token)
         {
-            MonitorAddress = selectedAddress;
-
+            Transaction.MonitorAddress = toAddress;
             var lastBlockNo = new BigInteger(0);
             var web3 = new Web3(string.IsNullOrWhiteSpace(_UserWeb3) ? InfuraDevWeb3 : _UserWeb3);
 
@@ -120,97 +121,53 @@ namespace ETH_GasOMeter
             {
                 try
                 {
-                    var tempLastBlockNo = new HexBigInteger(web3.Eth.Blocks.GetBlockNumber.SendRequestAsync().Result.Value - 1);
-                    if (tempLastBlockNo.Value <= lastBlockNo)
-                    {
-                        Task.Delay(_DelayLoopMS);
-                        continue;
-                    }
+                    var blockNo = new HexBigInteger(web3.Eth.Blocks.GetBlockNumber.SendRequestAsync().Result.Value);
 
-                    var ethGasStation = Task.Factory.StartNew(() =>
+                    if (blockNo.Value > lastBlockNo)
                     {
-                        var tempGasStation = EthGasStation.GetLatestGasStation();
+                        lastBlockNo = blockNo;
+                        Transaction.AddBlockByNumber(blockNo, web3);
 
-                        if (tempGasStation == null || tempGasStation.BlockNumber.Equals(0)) // failed query
+                        if (_EnableEthGasStation)
                         {
-                            var currentGas = UnitConversion.Convert.FromWei(web3.Eth.GasPrice.SendRequestAsync().Result.Value, UnitConversion.EthUnit.Gwei);
-                            tempGasStation = new EthGasStation(Convert.ToDecimal(currentGas));
+                            Task.Run(() => EthGasStation.GetLatestGasStation()).
+                                 ContinueWith(task =>
+                                 {
+                                     if (task.Result != null && (EthGasStation == null || task.Result.BlockNumber > EthGasStation.BlockNumber))
+                                     {
+                                         EthGasStation = task.Result;
+                                         OnEthGasStation?.Invoke(this, new EthGasStation.EthGasStationArgs(EthGasStation));
+                                     }
+                                 });
                         }
-                        return tempGasStation;
-                    }).ContinueWith((gasStationTask) => {
-                        if (gasStationTask.Result != null) { OnEthGasStationLog?.Invoke(this, new Transaction.EthGasStationEventArgs(gasStationTask.Result)); }
-                        return gasStationTask.Result;
-                    });
-
-                    var filterInput = new NewFilterInput()
-                    {
-                        Address = new string[] { MonitorAddress },
-                        FromBlock = new BlockParameter(tempLastBlockNo),
-                        ToBlock = new BlockParameter(web3.Eth.Blocks.GetBlockNumber.SendRequestAsync().Result)
-                    };
-
-                    var logs = Task.Factory.StartNew(() =>
-                    {
-                        var tempLogs = web3.Eth.Filters.GetLogs.SendRequestAsync(filterInput).Result;
-                        while (tempLogs == null) { tempLogs = web3.Eth.Filters.GetLogs.SendRequestAsync(filterInput).Result; }
-                        return tempLogs;
-                    });
-
-                    var lastBlock = Task.Factory.StartNew(() =>
-                    {
-                        var tempBlock = web3.Eth.Blocks.GetBlockWithTransactionsByNumber.SendRequestAsync(tempLastBlockNo).Result;
-                        while (tempBlock == null) { tempBlock = web3.Eth.Blocks.GetBlockWithTransactionsByNumber.SendRequestAsync(tempLastBlockNo).Result; }
-                        return tempBlock;
-                    });
-
-                    var transactionEventList = Task.Factory.StartNew(() =>
-                    {
-                        return logs.Result.AsParallel().
-                                           Select(log => new Transaction.TransactionEvent(log, web3)).
-                                           AsEnumerable().
-                                           OrderBy(transaction => transaction.Log.LogIndex.Value).
-                                           ToList();
-                    }).ContinueWith((txEventList) =>
-                    {
-                        OnTransactionLog?.Invoke(this, new Transaction.TransactionEventArgs(MonitorAddress, 
-                                                                                            txEventList.Result, lastBlock.Result, 
-                                                                                            ConvertUNIXTimestampToLocalDateTime));
-                        return txEventList.Result;
-                    });
-
-                    lastBlockNo = tempLastBlockNo;
+                    }
                 }
-                catch (AggregateException ex)
+                catch (AggregateException aEx)
                 {
-                    OnMessage?.Invoke(this,
-                                      new MessageArgs(ex.InnerExceptions.All(iEx => iEx.GetType().Equals(typeof(System.Net.Http.HttpRequestException))) ?
-                                                      ex.InnerExceptions[0].Message :
-                                                      ex.ToString()));
+                    var errMessage = new StringBuilder();
+                    errMessage.AppendLine(aEx.Message);
+
+                    if (!aEx.InnerExceptions.Any()) { if (aEx.InnerException != null) { errMessage.AppendLine(" " + aEx.InnerException.Message); } }
+                    else
+                    {
+                        foreach (var ex in aEx.InnerExceptions)
+                        {
+                            errMessage.AppendLine(" " + ex.Message);
+                            if (ex.InnerException != null) { errMessage.AppendLine("  " + ex.InnerException.Message); }
+                        }
+                    }
+                    OnMessage?.Invoke(this, new MessageArgs(errMessage.ToString()));
                 }
-                catch (Exception ex) { OnMessage?.Invoke(this, new MessageArgs(ex.ToString())); }
-
+                catch (Exception ex)
+                {
+                    var errMessage = new StringBuilder();
+                    errMessage.AppendLine(ex.Message);
+                    if (ex.InnerException != null) { errMessage.AppendLine(" " + ex.InnerException.Message); }
+                    OnMessage?.Invoke(this, new MessageArgs(errMessage.ToString()));
+                }
                 GC.Collect(GC.MaxGeneration, GCCollectionMode.Optimized, false);
-                Task.Delay(_DelayLoopMS);
+                Task.Delay((int)(_DelayLoopSec * 1000));
             }
-        }
-
-        private DateTime ConvertUNIXTimestampToLocalDateTime(string timestamp)
-        {
-            if (string.IsNullOrWhiteSpace(timestamp)) { return Epoch; }
-
-            if (timestamp.StartsWith("0x")) { timestamp = timestamp.Substring(2); }
-
-            try { return Epoch.AddSeconds(ulong.Parse(timestamp, NumberStyles.HexNumber)).ToLocalTime(); }
-            catch { return Epoch; }
-        }
-
-        public class RequestUserInputArgs : EventArgs
-        {
-            public RequestUserInputArgs(string message) => Message = message;
-
-            public string Message { get; }
-
-            public string UserInput { get; set; }
         }
 
         #region IDisposable Support
@@ -233,6 +190,8 @@ namespace ETH_GasOMeter
 
                         if (_CancellationTokenSource != null) { _CancellationTokenSource.Dispose(); }
                         if (_Task != null) { _Task.Dispose(); }
+
+                        if (Transaction.AllBlocks != null && Transaction.AllBlocks.Any()) { Transaction.AllBlocks.Clear(); }
 
                         OnMessage?.Invoke(this, new MessageArgs("Process cancelled."));
                     }

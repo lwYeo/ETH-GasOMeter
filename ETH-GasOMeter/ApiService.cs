@@ -1,7 +1,7 @@
 ﻿using Nethereum.Util;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -58,7 +58,7 @@ namespace ETH_GasOMeter
                 _Listener.Prefixes.Add(httpBind);
                 _IsOngoing = true;
 
-                Task.Factory.StartNew(() => Process(_Listener));
+                Task.Run(() => Process(_Listener));
             }
             catch (Exception)
             {
@@ -71,9 +71,10 @@ namespace ETH_GasOMeter
         {
             if (_IsOngoing)
             {
-                OnMessage?.Invoke(this, new MessageArgs("API service stopping..."));
                 _IsOngoing = false;
-                _Listener.Stop();
+                OnMessage?.Invoke(this, new MessageArgs("API service stopping..."));
+                try { _Listener.Stop(); }
+                catch (Exception ex) { OnMessage?.Invoke(this, new MessageArgs(ex.ToString())); }
             }
         }
 
@@ -99,127 +100,141 @@ namespace ETH_GasOMeter
                 }
                 catch (Exception ex) { OnMessage?.Invoke(this, new MessageArgs(ex.ToString())); }
 
-                Stream output = response.OutputStream;
-                if (buffer != null) { output.Write(buffer, 0, buffer.Length); }
-                output.Close();
+                using (var output = response.OutputStream) { if (buffer != null) { output.Write(buffer, 0, buffer.Length); } }
+
+                buffer = null;
+                GC.Collect(GC.MaxGeneration, GCCollectionMode.Optimized, false);
             }
         }
 
         public class APIResponseArgs : EventArgs
         {
-            private static readonly Newtonsoft.Json.JsonSerializerSettings settings = new Newtonsoft.Json.JsonSerializerSettings()
+            private static readonly JsonSerializerSettings settings = new JsonSerializerSettings()
             {
                 ContractResolver = new Json.ClassNameContractResolver()
             };
 
-            public APIResponseArgs(bool isSummary, string address, EthGasStation ethGasStation, List<Transaction.TransactionEventArgs> transactionEventList)
-            {
-                Response = isSummary ?
-                    Json.SerializeFromObject(new TransactionsSummary(address, ethGasStation, transactionEventList), settings) :
-                    Json.SerializeFromObject(new Transactions(address, ethGasStation, transactionEventList), settings);
-            }
-
             public string Response { get; }
+
+            public APIResponseArgs(string address, string[] excludeAddresses, Transaction transaction, EthGasStation ethGasStation, bool enableEthGasStation) => 
+                Response = Json.SerializeFromObject(new TransactionSummary(address, excludeAddresses.ToList(), transaction, ethGasStation, enableEthGasStation), settings);
         }
 
-        public class Transactions
+        public class TransactionSummary
         {
-            public Transactions(string address, EthGasStation ethGasStation, List<Transaction.TransactionEventArgs> transactionEventList)
-            {
-                MonitorAddress = address;
-                EthGasStation = ethGasStation;
-                Blocks = transactionEventList;
-            }
-
-            public string MonitorAddress { get; }
-
             public EthGasStation EthGasStation { get; }
 
-            public List<Transaction.TransactionEventArgs> Blocks { get; }
-        }
+            public BigInteger BlockNumber { get; }
 
-        public class TransactionsSummary
-        {
-            public TransactionsSummary(string address, EthGasStation ethGasStation, List<Transaction.TransactionEventArgs> transactionEventList)
-            {
-                MonitorAddress = address;
-                EthGasStation = ethGasStation;
+            public DateTime BlockTimestamp { get; }
 
-                Blocks = new List<Block>(transactionEventList.Count);
-                transactionEventList.ForEach(txEvent => Blocks.Add(new Block(txEvent.BlockNumber, txEvent.BlockTimestamp, txEvent.Events)));
-            }
+            public int BasedOnNumberOfBlocks { get; }
 
-            public string MonitorAddress { get; }
+            public decimal GasUsedPercent { get; }
 
-            public decimal HighestGweiOrGasStationSafeLow
-            {
-                get
-                {
-                    var highestGwei = Blocks.Max(b => (b.Transactions.Any()) ? b.Transactions.Max(tx => tx.GasPriceGwei) : 0);
-                    return new decimal[] { highestGwei, EthGasStation.SafeLowGwei }.Max();
-                }
-            }
+            public decimal HighestGasPriceGwei { get; }
 
-            public decimal HighestGweiOrGasStationAverage
-            {
-                get
-                {
-                    var highestGwei = Blocks.Max(b => (b.Transactions.Any()) ? b.Transactions.Max(tx => tx.GasPriceGwei) : 0);
-                    return new decimal[] { highestGwei, EthGasStation.AverageGwei }.Max();
-                }
-            }
+            public decimal LowestGasPriceGwei { get; }
 
-            public decimal HighestGweiOrGasStationFast
-            {
-                get
-                {
-                    var highestGwei = Blocks.Max(b => (b.Transactions.Any()) ? b.Transactions.Max(tx => tx.GasPriceGwei) : 0);
-                    return new decimal[] { highestGwei, EthGasStation.FastGwei }.Max();
-                }
-            }
+            public decimal Percentile80GasPriceGwei { get; }
 
-            public decimal HighestGweiOrGasStationFastest
-            {
-                get
-                {
-                    var highestGwei = Blocks.Max(b => (b.Transactions.Any()) ? b.Transactions.Max(tx => tx.GasPriceGwei) : 0);
-                    return new decimal[] { highestGwei, EthGasStation.FastestGwei }.Max();
-                }
-            }
+            public decimal Percentile60GasPriceGwei { get; }
 
-            public EthGasStation EthGasStation { get; }
+            public decimal Percentile40GasPriceGwei { get; }
+
+            public decimal Percentile20GasPriceGwei { get; }
+
+            public decimal Percentile10GasPriceGwei { get; }
+
+            public string ToAddress { get; }
+
+            public List<string> ExcludeFromAddresses { get; }
+
+            public decimal HighestTxPriceOrPercentile80GasPriceGwei { get; }
+
+            public decimal HighestTxPriceOrPercentile60GasPriceGwei { get; }
+
+            public decimal HighestTxPriceOrPercentile40GasPriceGwei { get; }
+
+            public decimal HighestTxPriceOrPercentile20GasPriceGwei { get; }
+
+            public decimal HighestTxPriceOrPercentile10GasPriceGwei { get; }
 
             public List<Block> Blocks { get; }
 
+            public TransactionSummary(string toAddress, List<string> excludeFromAddresses, Transaction transaction, EthGasStation ethGasStation, bool enableEthGasStation)
+            {
+                EthGasStation = ethGasStation;
+                _EnableEthGasStation = enableEthGasStation;
+
+                ToAddress = toAddress;
+                ExcludeFromAddresses = excludeFromAddresses;
+                Blocks = transaction.Blocks.Select(b => new Block(b)).ToList();
+
+                if (!Blocks.Any()) { return; }
+
+                BlockNumber = Blocks[0].BlockNumber;
+                BlockTimestamp = Blocks[0].Timestamp;
+                BasedOnNumberOfBlocks = Blocks.Count();
+                GasUsedPercent = Math.Round(Blocks.Average(b => b.GasUsedPercent), 3);
+
+                var allSuccessTransactions = transaction.AllBlocks.SelectMany(b => b.Results.Where(r => r.BlockNumber != null && r.Status == "success")).ToArray();
+                var allSuccessGasPrice = allSuccessTransactions.Select(result => result.GasPrice).OrderBy(p => p).ToArray();
+                
+                if (allSuccessGasPrice.Any())
+                {
+                    HighestGasPriceGwei = UnitConversion.Convert.FromWei(allSuccessGasPrice.Max(), toUnit: UnitConversion.EthUnit.Gwei);
+
+                    LowestGasPriceGwei = UnitConversion.Convert.FromWei(allSuccessGasPrice.Min(), toUnit: UnitConversion.EthUnit.Gwei);
+
+                    Percentile80GasPriceGwei = UnitConversion.Convert.FromWei(allSuccessGasPrice[(int)(allSuccessGasPrice.Count() * 0.8)], toUnit: UnitConversion.EthUnit.Gwei);
+                    Percentile60GasPriceGwei = UnitConversion.Convert.FromWei(allSuccessGasPrice[(int)(allSuccessGasPrice.Count() * 0.6)], toUnit: UnitConversion.EthUnit.Gwei);
+                    Percentile40GasPriceGwei = UnitConversion.Convert.FromWei(allSuccessGasPrice[(int)(allSuccessGasPrice.Count() * 0.4)], toUnit: UnitConversion.EthUnit.Gwei);
+                    Percentile20GasPriceGwei = UnitConversion.Convert.FromWei(allSuccessGasPrice[(int)(allSuccessGasPrice.Count() * 0.2)], toUnit: UnitConversion.EthUnit.Gwei);
+                    Percentile10GasPriceGwei = UnitConversion.Convert.FromWei(allSuccessGasPrice[(int)(allSuccessGasPrice.Count() * 0.1)], toUnit: UnitConversion.EthUnit.Gwei);
+
+                    var monitorBlocks = transaction.Blocks.
+                                                    SelectMany(b => b.Results.
+                                                                      Where(r => ExcludeFromAddresses.All(a => !a.Equals(r.From, StringComparison.OrdinalIgnoreCase))).
+                                                                      Select(r => r.GasPrice)).
+                                                    OrderBy(p => p).
+                                                    ToArray();
+
+                    var maxMonitorGwei = UnitConversion.Convert.FromWei((monitorBlocks.Any() ? monitorBlocks.Max() : 0), 
+                                                                        toUnit: UnitConversion.EthUnit.Gwei);
+
+                    HighestTxPriceOrPercentile80GasPriceGwei = new decimal[] { maxMonitorGwei, Percentile80GasPriceGwei }.Max();
+                    HighestTxPriceOrPercentile60GasPriceGwei = new decimal[] { maxMonitorGwei, Percentile60GasPriceGwei }.Max();
+                    HighestTxPriceOrPercentile40GasPriceGwei = new decimal[] { maxMonitorGwei, Percentile40GasPriceGwei }.Max();
+                    HighestTxPriceOrPercentile20GasPriceGwei = new decimal[] { maxMonitorGwei, Percentile20GasPriceGwei }.Max();
+                    HighestTxPriceOrPercentile10GasPriceGwei = new decimal[] { maxMonitorGwei, Percentile10GasPriceGwei }.Max();
+                }
+            }
+
+            private bool _EnableEthGasStation;
+
+            public bool ShouldSerializeEthGasStation() => _EnableEthGasStation;
+
             public class Block
             {
-                public Block(BigInteger blockNumber, DateTime timestamp, ETH_GasOMeter.Transaction.TransactionEvent[] transactionEvents)
-                {
-                    BlockNumber = blockNumber;
-                    Timestamp = timestamp;
-
-                    Transactions = new List<Transaction>();
-                    transactionEvents.ToList().ForEach(tx => Transactions.Add(new Transaction(tx)));
-                }
-
                 public BigInteger BlockNumber { get; }
 
                 public DateTime Timestamp { get; }
 
+                public decimal GasUsedPercent { get; }
+
                 public List<Transaction> Transactions { get; }
+
+                public Block(ETH_GasOMeter.Transaction.Block transactionBlock)
+                {
+                    BlockNumber = transactionBlock.Number;
+                    Timestamp = transactionBlock.Timestamp;
+                    GasUsedPercent = transactionBlock.GasUsedPercent;
+                    Transactions = transactionBlock.Results.Select(r => new Transaction(r)).ToList();
+                }
 
                 public class Transaction
                 {
-                    public Transaction(ETH_GasOMeter.Transaction.TransactionEvent transactionEvent)
-                    {
-                        Hash = transactionEvent.Log.TransactionHash;
-                        Status = (transactionEvent.Reciept.Status.Value.Equals(1)) ? "success" : "failed";
-                        From = transactionEvent.Transaction.From;
-                        GasPriceGwei = UnitConversion.Convert.FromWei(transactionEvent.Transaction.GasPrice.Value, UnitConversion.EthUnit.Gwei);
-                        GasUsed = transactionEvent.Reciept.GasUsed.Value;
-                        FeeETH = UnitConversion.Convert.FromWei(transactionEvent.Transaction.GasPrice.Value * GasUsed, toUnit: UnitConversion.EthUnit.Ether);
-                    }
-
                     public string Hash { get; }
 
                     public string Status { get; }
@@ -228,9 +243,19 @@ namespace ETH_GasOMeter
 
                     public decimal GasPriceGwei { get; }
 
-                    public BigInteger GasUsed { get; }
+                    public BigInteger? GasUsed { get; }
 
-                    public decimal FeeETH { get; }
+                    public decimal? FeeETH { get; }
+
+                    public Transaction(ETH_GasOMeter.Transaction.Block.Result result)
+                    {
+                        Hash = result.TransactionHash;
+                        Status = result.Status;
+                        From = result.From;
+                        GasPriceGwei = result.GasPriceGwei;
+                        GasUsed = result.GasUsed;
+                        FeeETH = result.FeeETH;
+                    }
                 }
             }
         }

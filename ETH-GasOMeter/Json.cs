@@ -12,6 +12,7 @@ namespace ETH_GasOMeter
         private static object _Object1 = new object();
         private static object _Object2 = new object();
         private static object _Object3 = new object();
+        private static object _Object4 = new object();
 
         public static string SerializeFromObject(object obj, JsonSerializerSettings settings = null)
         {
@@ -75,6 +76,21 @@ namespace ETH_GasOMeter
                 }
                 catch { }
                 return jObject;
+            }
+        }
+
+        public static T CloneObject<T>(T objectToClone)
+        {
+            lock (_Object4)
+            {
+                if (objectToClone == null) { return default(T); }
+                try
+                {
+                    return JsonConvert.DeserializeObject<T>(JsonConvert.SerializeObject(objectToClone),
+                                                            new JsonSerializerSettings() { ObjectCreationHandling = ObjectCreationHandling.Replace });
+
+                }
+                catch { return default(T); }
             }
         }
 
