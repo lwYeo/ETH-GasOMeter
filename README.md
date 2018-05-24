@@ -62,7 +62,7 @@ If you find this tool useful, and would like to support the developer, then cons
 
 BTC						:	3GS5J5hcG6Qcu9xHWGmJaV5ftWLmZuR255
 
-ETH (or any ERC-20 token)	:	0x9172ff7884cefed19327adace9c470ef1796105c
+ETH (or any token)	:	0x9172ff7884cefed19327adace9c470ef1796105c
 
 LTC						:	LbFkAto1qYt8RdTFHL871H4djendcHyCyB
 
