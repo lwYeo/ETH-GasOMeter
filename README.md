@@ -14,15 +14,6 @@ Built with Visual Studio 2017 (requires .NET Core 2.0, compatible with Windows /
 
 --------------------------------------------------------------------
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
---------------------------------------------------------------------
-
 The following files can be used to run the software:
 
 	- Linux 
@@ -128,3 +119,26 @@ Below is the example of the API output:
   ]
 }
 ```
+--------------------------------------------------------------------
+
+## LICENSE
+
+ETH-GasOMeter is licensed under the [MIT license](https://github.com/lwYeo/ETH-GasOMeter/blob/master/LICENSE.md).
+
+Libraries are included in the Software under the following license terms:
+
+- Nethereum
+  https://github.com/Nethereum/Nethereum/blob/master/LICENSE.md
+
+- Json.NET
+  https://github.com/JamesNK/Newtonsoft.Json/blob/master/LICENSE.md
+
+- Common Infrastructure Libraries for .NET
+  http://netcommon.sourceforge.net/license.html
+
+- Bouncy Castle
+  https://www.bouncycastle.org/licence.html
+
+- .NET Core
+  https://github.com/dotnet/core/blob/master/LICENSE.TXT
+  
