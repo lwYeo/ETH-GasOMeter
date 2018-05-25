@@ -57,7 +57,8 @@ namespace ETH_GasOMeter
         {
             await Task.Run(() =>
             {
-                var newBlock = new Block(blockNumber, web3);
+                Block newBlock = null;
+                while (newBlock == null) { try { newBlock = new Block(blockNumber, web3); } catch { } }
                 lock (_Blocks)
                 {
                     _Blocks.Insert(0, newBlock);
