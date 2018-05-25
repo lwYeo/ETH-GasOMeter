@@ -125,8 +125,15 @@ namespace ETH_GasOMeter
 
                     if (blockNo.Value > lastBlockNo)
                     {
+                        if (lastBlockNo == 0) { Transaction.AddBlockByNumber(blockNo, web3); }
+                        else
+                        {
+                            for (var tempBlockNo = (lastBlockNo + 1); tempBlockNo <= blockNo.Value; tempBlockNo++)
+                            {
+                                Transaction.AddBlockByNumber(new HexBigInteger(tempBlockNo), web3);
+                            }
+                        }
                         lastBlockNo = blockNo;
-                        Transaction.AddBlockByNumber(blockNo, web3);
 
                         if (_EnableEthGasStation)
                         {
