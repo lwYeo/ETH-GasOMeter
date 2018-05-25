@@ -42,7 +42,7 @@ If required, edit the above batch script file(s) with the command line arguments
 	
 	loop-delay		Delay loop query into the web3 provider in seconds, default 10
 
-	recent-blocks		API display a history of recent blocks, default 120 (approx. 30 minutes)
+	recent-blocks		API display a history of recent blocks, default 40 (approx. 10 minutes)
 	
 	silent			Disables printing into console, may improve performance (for API monitoring systems only), default false
 	
