@@ -50,7 +50,7 @@ If required, edit the above batch script file(s) with the command line arguments
 	
 	to-address		User-defined address to monitor so to start the process immediately, default null (will pause at the address selection menu)
 	
-	exclude-from-address	User-defined address to exclude from HighestTxPrice calculation, default null
+	exclude-from-address	User-defined addresses(seperated by a comma ',') to exclude from HighestTxPrice calculation, default null
 	
 	enable-ethgasstation	Enables reading of EthGasStation.info into API & console, default false
 
