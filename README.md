@@ -123,6 +123,8 @@ Below is the example of the API output:
 
 ## LICENSE
 
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FlwYeo%2FETH-GasOMeter.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2FlwYeo%2FETH-GasOMeter?ref=badge_shield)
+
 ETH-GasOMeter is licensed under the [MIT license](https://github.com/lwYeo/ETH-GasOMeter/blob/master/LICENSE.md).
 
 Libraries are included in the Software under the following license terms:
