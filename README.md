@@ -1,4 +1,6 @@
 # ETH-GasOMeter
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FlwYeo%2FETH-GasOMeter.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2FlwYeo%2FETH-GasOMeter?ref=badge_shield)
+
 
 This application gets gas price activities from transactions in the Ethereum network, and computes dynamic gas price via JSON API.
 
@@ -144,3 +146,6 @@ Libraries are included in the Software under the following license terms:
 - .NET Core
   https://github.com/dotnet/core/blob/master/LICENSE.TXT
   
+
+
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FlwYeo%2FETH-GasOMeter.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2FlwYeo%2FETH-GasOMeter?ref=badge_large)
